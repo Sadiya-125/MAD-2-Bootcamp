@@ -3,7 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from extensions import db
 
 ROLES = ["admin", "judge", "participant"]
-USER_STATUSES = ["active", "inactive", "blacklisted"]
+USER_STATUSES = ["Active", "Inactive", "Blacklisted"]
 EVENT_STATUSES = ["Draft", "Slot Creation", "Booking Open", "Closed", "Completed"]
 EVENT_MODES = ["Online", "Offline"]
 EVENT_LEVELS = ["Beginner", "Intermediate", "Advanced"]
@@ -24,7 +24,7 @@ class User(db.Model):
     role = db.Column(db.String(20), nullable=False, default="participant")
     phone = db.Column(db.String(20))
     organization = db.Column(db.String(120))
-    status = db.Column(db.String(20), nullable=False, default="active")
+    status = db.Column(db.String(20), nullable=False, default="Active")
     created_at = db.Column(db.DateTime, default=datetime.now)
 
     judge_profile = db.relationship("JudgeProfile", backref="user", uselist=False,

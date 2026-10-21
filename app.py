@@ -1,7 +1,9 @@
 from flask import Flask
 from config import Config
-from extensions import db
+from extensions import db, jwt
 from models import User
+from routes.auth import auth_bp
+from routes.admin import admin_bp
 
 def create_admin():
     if User.query.filter_by(role='admin').first() is None:
@@ -21,6 +23,18 @@ def create_app():
     app.config.from_object(Config)
     
     db.init_app(app)
+    jwt.init_app(app)
+
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(admin_bp)
+
+    @app.errorhandler(404)
+    def not_found(e):
+        return {"message": "Resource Not Found."}, 404
+
+    @app.errorhandler(405)
+    def not_allowed(e):
+        return {"message": "Method Not Allowed."}, 405
 
     with app.app_context():
         db.create_all()
