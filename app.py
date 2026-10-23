@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 from config import Config
 from extensions import db, jwt
 from models import User
@@ -41,8 +41,10 @@ def create_app():
         create_admin()
 
     @app.route('/')
-    def index():
-        return {"message": "Demo Day API is Running!"}
+    @app.route('/<path:path>')
+    def index(path=''):
+        # Let the Vue router handle client-side routes (history mode)
+        return render_template("index.html")
 
     return app
 
