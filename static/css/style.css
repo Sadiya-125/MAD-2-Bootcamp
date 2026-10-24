@@ -1,0 +1,39 @@
+body {
+  background: #f4f6fb;
+}
+.navbar-brand {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.card {
+  border: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.stat-card .value {
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+.stat-card .label {
+  color: #6c757d;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+.auth-box {
+  max-width: 420px;
+  margin: 6vh auto;
+}
+.toast-area {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1100;
+  width: 320px;
+}
+.toast-area .alert {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+.table td,
+.table th {
+  vertical-align: middle;
+}

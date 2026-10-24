@@ -22,7 +22,7 @@ export const auth = reactive({
   },
 });
 
-const HOME = { admin: "/profile", judge: "/profile", participant: "/profile" };
+const HOME = { admin: "/admin", judge: "/profile", participant: "/profile" };
 
 export function homeFor(user) {
   return user ? HOME[user.role] : "/login";
@@ -66,4 +66,24 @@ export async function api(path, method = "GET", body = null) {
     );
   }
   return data;
+}
+
+const BADGE = {
+  Draft: "secondary",
+  "Slot Creation": "secondary",
+  "Booking Open": "succes",
+  Closed: "warning",
+  Completed: "dark",
+  Available: "success",
+  Full: "warning",
+  Cancelled: "danger",
+  Booked: "primary",
+  Archived: "secondary",
+  Active: "success",
+  Inactive: "secondary",
+  Blacklisted: "danger",
+};
+
+export function badge(status) {
+  return "badge bg-" + (BADGE[status] || "secondary");
 }

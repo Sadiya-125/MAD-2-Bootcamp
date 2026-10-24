@@ -1,7 +1,13 @@
 import { auth } from "../api.js";
 
 const LINKS = {
-  admin: [],
+  admin: [
+    { to: "/admin", label: "Dashboard" },
+    { to: "/admin/tracks", label: "Tracks" },
+    { to: "/admin/events", label: "Events" },
+    { to: "/admin/judges", label: "Judges" },
+    { to: "/admin/users", label: "Participants" },
+  ],
   judge: [],
   participant: [],
 };
