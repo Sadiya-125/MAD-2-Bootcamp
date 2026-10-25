@@ -8,7 +8,12 @@ const LINKS = {
     { to: "/admin/judges", label: "Judges" },
     { to: "/admin/users", label: "Participants" },
   ],
-  judge: [],
+  judge: [
+    {
+      to: "/judge",
+      label: "Dashboard",
+    },
+  ],
   participant: [],
 };
 

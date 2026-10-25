@@ -22,7 +22,7 @@ export const auth = reactive({
   },
 });
 
-const HOME = { admin: "/admin", judge: "/profile", participant: "/profile" };
+const HOME = { admin: "/admin", judge: "/judge", participant: "/profile" };
 
 export function homeFor(user) {
   return user ? HOME[user.role] : "/login";
@@ -56,7 +56,7 @@ export async function api(path, method = "GET", body = null) {
 
   if ((response.status === 401 || response.status === 422) && auth.token) {
     auth.logout();
-    window.location.hash = "#/login";
+    window.location.href = "/login";
   }
 
   if (!response.ok) {
@@ -71,7 +71,7 @@ export async function api(path, method = "GET", body = null) {
 const BADGE = {
   Draft: "secondary",
   "Slot Creation": "secondary",
-  "Booking Open": "succes",
+  "Booking Open": "success",
   Closed: "warning",
   Completed: "dark",
   Available: "success",
