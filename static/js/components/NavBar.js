@@ -14,7 +14,20 @@ const LINKS = {
       label: "Dashboard",
     },
   ],
-  participant: [],
+  participant: [
+    {
+      to: "/dashboard",
+      label: "Dashboard",
+    },
+    {
+      to: "/events",
+      label: "Browse Events",
+    },
+    {
+      to: "/bookings",
+      label: "My Bookings",
+    },
+  ],
 };
 
 export default {

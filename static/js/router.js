@@ -11,10 +11,15 @@ import AdminUsers from "./pages/admin/AdminUsers.js";
 import JudgeDashboard from "./pages/judge/JudgeDashboard.js";
 import JudgeEvaluate from "./pages/judge/JudgeEvaluate.js";
 import JudgeEvent from "./pages/judge/JudgeEvent.js";
+import ParticipantDashboard from "./pages/participant/ParticipantDashboard.js";
+import EventBrowse from "./pages/participant/EventBrowse.js";
+import EventDetail from "./pages/participant/EventDetail.js";
+import MyBookings from "./pages/participant/MyBookings.js";
 
 const ALL = ["admin", "judge", "participant"];
 const ADMIN = ["admin"];
 const JUDGE = ["judge"];
+const PARTICIPANT = ["participant"];
 
 const routes = [
   { path: "/", redirect: () => homeFor(auth.user) },
@@ -43,6 +48,27 @@ const routes = [
     path: "/judge/evaluate/:bookingId",
     component: JudgeEvaluate,
     meta: { roles: JUDGE },
+  },
+
+  {
+    path: "/dashboard",
+    component: ParticipantDashboard,
+    meta: { roles: PARTICIPANT },
+  },
+  {
+    path: "/events",
+    component: EventBrowse,
+    meta: { roles: PARTICIPANT },
+  },
+  {
+    path: "/events/:id",
+    component: EventDetail,
+    meta: { roles: PARTICIPANT },
+  },
+  {
+    path: "/bookings",
+    component: MyBookings,
+    meta: { roles: PARTICIPANT },
   },
 
   { path: "/:pathMatch(.*)*", redirect: "/" },

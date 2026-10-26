@@ -5,6 +5,8 @@ from models import User
 from routes.auth import auth_bp
 from routes.admin import admin_bp
 from routes.judge import judge_bp
+from routes.events import events_bp
+from routes.participant import participant_bp
 
 def create_admin():
     if User.query.filter_by(role='admin').first() is None:
@@ -29,6 +31,8 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(judge_bp)
+    app.register_blueprint(events_bp)
+    app.register_blueprint(participant_bp)
 
     @app.errorhandler(404)
     def not_found(e):

@@ -22,7 +22,7 @@ export const auth = reactive({
   },
 });
 
-const HOME = { admin: "/admin", judge: "/judge", participant: "/profile" };
+const HOME = { admin: "/admin", judge: "/judge", participant: "/dashboard" };
 
 export function homeFor(user) {
   return user ? HOME[user.role] : "/login";
