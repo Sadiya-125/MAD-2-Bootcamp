@@ -16,6 +16,7 @@ export default {
       selectedJudges: [],
       statuses: STATUSES,
       newStatus: "",
+      slots: [],
       criterion: { name: "", max_marks: 10, weightage: "", description: "" },
     };
   },
@@ -41,6 +42,7 @@ export default {
       this.event = await api(`/api/admin/events/${this.eventId}`);
       this.newStatus = this.event.status;
       this.selectedJudges = this.event.judges.map((j) => j.id);
+      this.slots = await api(`/api/admin/slots?event_id=${this.eventId}`);
     },
     async run(action, successText) {
       try {
@@ -90,6 +92,23 @@ export default {
         "Criterion Removed",
       );
     },
+    reassign(slot, judgeId) {
+      this.run(
+        () =>
+          api(`/api/admin/slots/${slot.id}/judge`, "PUT", {
+            judge_id: Number(judgeId),
+          }),
+        "Slot Reassigned",
+      );
+    },
+    publish() {
+      if (!confirm("Publish Results? Participants will See their Marks."))
+        return;
+      this.run(
+        () => api(`/api/admin/events/${this.eventId}/publish`, "PUT"),
+        "Results Published",
+      );
+    },
   },
   template: `
     <div v-if="event">
@@ -105,6 +124,8 @@ export default {
             <option v-for="s in statuses">{{ s }}</option>
           </select>
           <button class="btn btn-sm btn-primary text-nowrap" @click="changeStatus">Update Status</button>
+          <span v-if="event.results_published" class="badge bg-success align-self-center">Results Published</span>
+          <button v-else class="btn btn-sm btn-success text-nowrap" @click="publish">Publish Results</button>
         </div>
       </div>
 
@@ -123,13 +144,13 @@ export default {
                 <span class="text-muted small">{{ j.expertise }}</span></label>
             </div>
             <p v-if="!allJudges.length" class="text-muted">Create Judges First.</p>
-            <button class="btn btn-sm btn-primary mt-2" @click="saveJudges">Save Assignment</button>
+            <button class="btn btn-sm btn-primary mt-2" @click="saveJudges">Save assignment</button>
           </div>
         </div>
 
         <div class="col-lg-8">
           <div class="card p-3 h-100">
-            <h5>Evaluation Rubric <span class="small text-muted">(Total Weightage {{ totalWeight }}% / 100%)</span></h5>
+            <h5>Evaluation Rubric <span class="small text-muted">(total weightage {{ totalWeight }}% / 100%)</span></h5>
             <table class="table table-sm">
               <thead><tr><th>Criterion</th><th>Max marks</th><th>Weightage</th><th></th></tr></thead>
               <tbody>
@@ -150,6 +171,27 @@ export default {
             </form>
           </div>
         </div>
+      </div>
+
+      <div class="card p-3 mt-3 table-responsive">
+        <h5>All Judge Slots</h5>
+        <table class="table table-sm">
+          <thead><tr><th>Date</th><th>Time</th><th>Booked</th><th>Status</th><th>Judge (reassign)</th></tr></thead>
+          <tbody>
+            <tr v-for="s in slots" :key="s.id">
+              <td>{{ s.date }}</td>
+              <td>{{ s.start_time }}-{{ s.end_time }}</td>
+              <td>{{ s.booked_count }} / {{ s.capacity }}</td>
+              <td><span :class="badge(s.status)">{{ s.status }}</span></td>
+              <td>
+                <select class="form-select form-select-sm" :value="s.judge_id" @change="reassign(s, $event.target.value)">
+                  <option v-for="j in event.judges" :value="j.id">{{ j.name }}</option>
+                </select>
+              </td>
+            </tr>
+            <tr v-if="!slots.length"><td colspan="5" class="text-muted">No Slots Created Yet.</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   `,

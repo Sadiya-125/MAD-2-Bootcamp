@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, request
 from extensions import db
 from models import Booking, CriterionScore, Evaluation, Event, Slot
 from utils import current_user, error, missing_fields, parse_date, parse_time, role_required
+from cache_utils import clear_event_cache
 
 judge_bp = Blueprint("judge", __name__, url_prefix="/api/judge")
 
@@ -103,6 +104,7 @@ def create_slot(event_id):
         return error(message)
     db.session.add(slot)
     db.session.commit()
+    clear_event_cache(event.id)
     return jsonify(slot.to_dict()), 201
  
 def slot_editable(slot):
@@ -124,6 +126,7 @@ def update_slot(slot_id):
         db.session.rollback()
         return error(message)
     db.session.commit()
+    clear_event_cache(slot.event_id)
     return jsonify(slot.to_dict())
  
 @judge_bp.delete("/slots/<int:slot_id>")
@@ -135,8 +138,10 @@ def delete_slot(slot_id):
     message = slot_editable(slot)
     if message:
         return error(message)
+    event_id = slot.event_id
     db.session.delete(slot)
     db.session.commit()
+    clear_event_cache(event_id)
     return jsonify({"message": "Slot Removed"})
  
 @judge_bp.put("/slots/<int:slot_id>/complete")
@@ -150,6 +155,7 @@ def complete_slot(slot_id):
         return error(f"{len(pending)} Demo(s) in this Slot are Not Evaluated Yet")
     slot.status = "Completed"
     db.session.commit()
+    clear_event_cache(slot.event_id)
     return jsonify(slot.to_dict())
  
 def get_own_booking(booking_id, judge):

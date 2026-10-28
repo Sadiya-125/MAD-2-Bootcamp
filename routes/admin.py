@@ -1,8 +1,9 @@
 from flask import Blueprint, request, jsonify
-from sqlalchemy import or_
+from sqlalchemy import or_, update
 from extensions import db
 from models import Criterion, Event, JudgeProfile, Track, User, Slot, Booking, Evaluation, EVENT_MODES, EVENT_STATUSES, EVENT_LEVELS, USER_STATUSES
 from utils import error, missing_fields, parse_date, role_required, valid_email
+from cache_utils import clear_event_cache
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
 
@@ -41,6 +42,7 @@ def create_track():
     track = Track(code=code, name=data["name"].strip(), description=data.get("description"))
     db.session.add(track)
     db.session.commit()
+    clear_event_cache()
     return jsonify(track.to_dict()), 201
 
 @admin_bp.put("/tracks/<int:track_id>")
@@ -58,6 +60,7 @@ def update_track(track_id):
             return error("Invalid Status. Must be 'Active' or 'Inactive'.")
         track.status = data["status"]
     db.session.commit()
+    clear_event_cache()
     return jsonify(track.to_dict())
 
 @admin_bp.delete("/tracks/<int:track_id>")
@@ -68,6 +71,7 @@ def delete_track(track_id):
         return error(f"Cannot Delete Track '{track.code}' as it has Associated Events. Archive the Track Instead.")
     db.session.delete(track)
     db.session.commit()
+    clear_event_cache()
     return jsonify({"message": f"Track '{track.code}' Deleted."})
 
 DATE_FIELDS = ["slot_open_date", "slot_close_date", "booking_open_date", "booking_close_date"]
@@ -155,6 +159,7 @@ def create_event():
 
     db.session.add(event)
     db.session.commit()
+    clear_event_cache()
     return jsonify(event.to_dict(detail=True)), 201
 
 @admin_bp.get("/events/<int:event_id>")
@@ -173,6 +178,7 @@ def update_event(event_id):
         return error(message)
 
     db.session.commit()
+    clear_event_cache(event.id)
     return jsonify(event.to_dict(detail=True))
 
 @admin_bp.delete("/events/<int:event_id>")
@@ -183,6 +189,7 @@ def delete_event(event_id):
         return error("Event Already has Bookings. Close it Instead of Deleting.")
     db.session.delete(event)
     db.session.commit()
+    clear_event_cache(event_id)
     return jsonify({"message": "Event Deleted"})
 
 @admin_bp.put("/events/<int:event_id>/status")
@@ -203,6 +210,7 @@ def change_event_status(event_id):
 
     event.status = new_status
     db.session.commit()
+    clear_event_cache(event.id)
     return jsonify(event.to_dict(detail=True))
 
 @admin_bp.put("/events/<int:event_id>/judges")
@@ -222,6 +230,7 @@ def assign_judges(event_id):
 
     event.judges = judges
     db.session.commit()
+    clear_event_cache(event.id)
     return jsonify(event.to_dict(detail=True))
 
 def rubric_locked(event):
@@ -267,6 +276,7 @@ def add_criterion(event_id):
         return error(message)
     db.session.add(criterion)
     db.session.commit()
+    clear_event_cache(event.id)
     return jsonify(criterion.to_dict()), 201
  
 @admin_bp.put("/criteria/<int:criterion_id>")
@@ -280,6 +290,7 @@ def update_criterion(criterion_id):
         db.session.rollback()
         return error(message)
     db.session.commit()
+    clear_event_cache(criterion.event_id)
     return jsonify(criterion.to_dict())
  
 @admin_bp.delete("/criteria/<int:criterion_id>")
@@ -288,8 +299,10 @@ def delete_criterion(criterion_id):
     criterion = db.get_or_404(Criterion, criterion_id)
     if rubric_locked(criterion.event):
         return error("Rubric is Locked Because Evaluations Already Exist")
+    event_id = criterion.event_id
     db.session.delete(criterion)
     db.session.commit()
+    clear_event_cache(event_id)
     return jsonify({"message": "Criterion Deleted"})
 
 @admin_bp.get("/judges")
@@ -379,3 +392,110 @@ def change_user_status(user_id):
     user.status = new_status
     db.session.commit()
     return jsonify(user.to_dict())
+
+@admin_bp.get("/slots")
+@role_required("admin")
+def list_slots():
+    query = Slot.query
+    if request.args.get("event_id", type=int):
+        query = query.filter(Slot.event_id == request.args.get("event_id", type=int))
+    slots = query.order_by(Slot.date, Slot.start_time).all()
+    return jsonify([s.to_dict() for s in slots])
+ 
+@admin_bp.put("/slots/<int:slot_id>/judge")
+@role_required("admin")
+def reassign_judge(slot_id):
+    slot = db.get_or_404(Slot, slot_id)
+    judge = db.session.get(User, (request.get_json(silent=True) or {}).get("judge_id") or 0)
+    if judge is None or judge.role != "judge" or judge.status != "Active":
+        return error("Choose an Active Judge")
+    if judge not in slot.event.judges:
+        return error(f"{judge.name} is Not Assigned to this Event")
+    clash = Slot.query.filter(Slot.judge_id == judge.id, Slot.date == slot.date, Slot.id != slot.id,
+                              Slot.status != "Cancelled", Slot.start_time < slot.end_time,
+                              Slot.end_time > slot.start_time).first()
+    if clash:
+        return error(f"{judge.name} Already has a Slot at that Time")
+    slot.judge_id = judge.id
+    db.session.commit()
+    clear_event_cache(slot.event_id)
+    return jsonify(slot.to_dict())
+
+@admin_bp.get("/bookings")
+@role_required("admin")
+def list_bookings():
+    query = Booking.query.join(User, Booking.participant_id == User.id)
+    q = request.args.get("q", "").strip()
+    if q:
+        query = query.filter(or_(User.name.ilike(f"%{q}%"), User.email.ilike(f"%{q}%"),
+                                 Booking.project_title.ilike(f"%{q}%")))
+    if request.args.get("event_id", type=int):
+        query = query.filter(Booking.event_id == request.args.get("event_id", type=int))
+    if request.args.get("status"):
+        query = query.filter(Booking.status == request.args["status"])
+    bookings = query.order_by(Booking.booked_at.desc()).all()
+    return jsonify([b.to_dict(include_result=True) for b in bookings])
+ 
+@admin_bp.put("/bookings/<int:booking_id>/move")
+@role_required("admin")
+def move_booking(booking_id):
+    booking = db.get_or_404(Booking, booking_id)
+    target = db.session.get(Slot, (request.get_json(silent=True) or {}).get("slot_id") or 0)
+    if booking.status != "Booked":
+        return error("Only Active (Booked) Bookings can be Rescheduled")
+    if target is None or target.event_id != booking.event_id or target.id == booking.slot_id:
+        return error("Choose a Different Slot of the Same Event")
+    if target.status in ("Cancelled", "Completed"):
+        return error(f"Target Slot is {target.status}")
+ 
+    seat = db.session.execute(update(Slot)
+                              .where(Slot.id == target.id, Slot.booked_count < Slot.capacity)
+                              .values(booked_count=Slot.booked_count + 1))
+    if seat.rowcount == 0:
+        db.session.rollback()
+        return error("Target Slot is Full", 409)
+    db.session.refresh(target)
+    if target.booked_count >= target.capacity:
+        target.status = "Full"
+ 
+    old = booking.slot
+    old.booked_count -= 1
+    if old.status == "Full":
+        old.status = "Available"
+    booking.slot_id = target.id
+    db.session.commit()
+    clear_event_cache(booking.event_id)
+    return jsonify({"message": "Booking Rescheduled", "booking": booking.to_dict()})
+ 
+@admin_bp.put("/events/<int:event_id>/publish")
+@role_required("admin")
+def publish_results(event_id):
+    event = db.get_or_404(Event, event_id)
+    pending = Booking.query.filter_by(event_id=event.id, status="Booked").count()
+    if pending:
+        return error(f"{pending} Booking(s) are Still Waiting for Evaluation")
+    if not Booking.query.filter_by(event_id=event.id, status="Completed").count():
+        return error("Nothing to Publish Yet")
+    event.results_published = True
+    db.session.commit()
+    clear_event_cache(event.id)
+    return jsonify({"message": "Results Published", "event": event.to_dict()})
+ 
+@admin_bp.get("/search")
+@role_required("admin")
+def global_search():
+    q = request.args.get("q", "").strip()
+    if len(q) < 2:
+        return error("Type At Least 2 Characters")
+    like = f"%{q}%"
+    people = User.query.filter(User.role != "admin",
+                               or_(User.name.ilike(like), User.email.ilike(like))).limit(20).all()
+    events = Event.query.filter(or_(Event.name.ilike(like), Event.venue.ilike(like))).limit(10).all()
+    bookings = Booking.query.join(User, Booking.participant_id == User.id) \
+        .filter(or_(Booking.project_title.ilike(like), User.name.ilike(like))).limit(10).all()
+    return jsonify({
+        "participants": [u.to_dict() for u in people if u.role == "participant"],
+        "judges": [u.to_dict() for u in people if u.role == "judge"],
+        "events": [e.to_dict() for e in events],
+        "bookings": [b.to_dict() for b in bookings],
+    })

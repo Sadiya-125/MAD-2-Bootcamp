@@ -12,6 +12,10 @@ class Config:
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'eylHRnQ3QVtLXo19Pqo82wLsSO9UZX9wVFn-L5_R2aM')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=8)
 
+    CACHE_TYPE = "RedisCache"
+    CACHE_REDIS_URL = "redis://localhost:6379/0"
+    CACHE_DEFAULT_TIMEOUT = 300
+
     ADMIN_NAME = "Super Admin"
     ADMIN_EMAIL = "admin@demoday.local"
     ADMIN_PASSWORD = "admin123"

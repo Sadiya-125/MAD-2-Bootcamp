@@ -7,6 +7,8 @@ const LINKS = {
     { to: "/admin/events", label: "Events" },
     { to: "/admin/judges", label: "Judges" },
     { to: "/admin/users", label: "Participants" },
+    { to: "/admin/bookings", label: "Bookings" },
+    { to: "/admin/search", label: "Search" },
   ],
   judge: [
     {

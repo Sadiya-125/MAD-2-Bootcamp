@@ -16,7 +16,7 @@ export default {
         { label: "Participants", value: s.participants, to: "/admin/users" },
         { label: "Judges", value: s.judges, to: "/admin/judges" },
         { label: "Slots", value: s.slots, to: "/admin/events" },
-        { label: "Bookings", value: s.bookings, to: "/admin/events" },
+        { label: "Bookings", value: s.bookings, to: "/admin/bookings" },
         { label: "Evaluations", value: s.evaluations, to: "/admin/events" },
       ];
     },

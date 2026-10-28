@@ -4,6 +4,7 @@ from sqlalchemy import update
 from extensions import db
 from models import Event, Slot, Booking
 from utils import error, role_required, current_user
+from cache_utils import clear_event_cache
 
 participant_bp = Blueprint("participant", __name__, url_prefix="/api/participant")
 
@@ -81,6 +82,7 @@ def book_slot():
     booking = Booking(participant_id=user.id, slot_id=slot.id, event_id=event.id, project_title=title)
     db.session.add(booking)
     db.session.commit()
+    clear_event_cache(event.id)
     return jsonify({"message": "Slot Booked Successfully", "booking": booking_view(booking)}), 201
 
 @participant_bp.put("/bookings/<int:booking_id>/cancel")
@@ -100,4 +102,5 @@ def cancel_booking(booking_id):
     if slot.status == "Full":
         slot.status = "Available"
     db.session.commit()
+    clear_event_cache(slot.event_id)
     return jsonify({"message": "Booking Cancelled", "booking": booking_view(booking)})

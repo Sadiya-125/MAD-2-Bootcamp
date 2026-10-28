@@ -8,6 +8,8 @@ import AdminEvents from "./pages/admin/AdminEvents.js";
 import AdminEventDetail from "./pages/admin/AdminEventDetail.js";
 import AdminJudges from "./pages/admin/AdminJudges.js";
 import AdminUsers from "./pages/admin/AdminUsers.js";
+import AdminBookings from "./pages/admin/AdminBookings.js";
+import AdminSearch from "./pages/admin/AdminSearch.js";
 import JudgeDashboard from "./pages/judge/JudgeDashboard.js";
 import JudgeEvaluate from "./pages/judge/JudgeEvaluate.js";
 import JudgeEvent from "./pages/judge/JudgeEvent.js";
@@ -37,6 +39,8 @@ const routes = [
   },
   { path: "/admin/judges", component: AdminJudges, meta: { roles: ADMIN } },
   { path: "/admin/users", component: AdminUsers, meta: { roles: ADMIN } },
+  { path: "/admin/bookings", component: AdminBookings, meta: { roles: ADMIN } },
+  { path: "/admin/search", component: AdminSearch, meta: { roles: ADMIN } },
 
   { path: "/judge", component: JudgeDashboard, meta: { roles: JUDGE } },
   {
