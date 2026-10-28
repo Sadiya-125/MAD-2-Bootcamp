@@ -4,6 +4,7 @@ from extensions import db
 from models import Criterion, Event, JudgeProfile, Track, User, Slot, Booking, Evaluation, EVENT_MODES, EVENT_STATUSES, EVENT_LEVELS, USER_STATUSES
 from utils import error, missing_fields, parse_date, role_required, valid_email
 from cache_utils import clear_event_cache
+from tasks import notify_results
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
 
@@ -479,6 +480,7 @@ def publish_results(event_id):
     event.results_published = True
     db.session.commit()
     clear_event_cache(event.id)
+    notify_results.delay(event.id)
     return jsonify({"message": "Results Published", "event": event.to_dict()})
  
 @admin_bp.get("/search")

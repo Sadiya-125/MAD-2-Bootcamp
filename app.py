@@ -2,6 +2,7 @@ from flask import Flask, render_template
 from config import Config
 from extensions import db, jwt, cache
 from models import User
+from celery_app import celery_init_app
 from routes.auth import auth_bp
 from routes.admin import admin_bp
 from routes.judge import judge_bp
@@ -28,6 +29,7 @@ def create_app():
     db.init_app(app)
     jwt.init_app(app)
     cache.init_app(app)
+    celery_init_app(app)
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
@@ -56,6 +58,7 @@ def create_app():
     return app
 
 app = create_app()
+celery_app = app.extensions["celery"] # celery -A app.celery_app worker -l info
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -16,6 +16,19 @@ class Config:
     CACHE_REDIS_URL = "redis://localhost:6379/0"
     CACHE_DEFAULT_TIMEOUT = 300
 
+    CELERY = {
+        'broker_url': 'redis://localhost:6379/1',
+        'result_backend': 'redis://localhost:6379/2',
+        'timezone': 'Asia/Kolkata',
+        'task_ignore_result': False
+    }
+
+    SMTP_HOST = "localhost"
+    SMTP_PORT = 1025
+    MAIL_SENDER = "Demoday <noreply@demoday.local>"
+
+    EXPORT_DIR = os.path.join(BASE_DIR, "exports")
+
     ADMIN_NAME = "Super Admin"
     ADMIN_EMAIL = "admin@demoday.local"
     ADMIN_PASSWORD = "admin123"

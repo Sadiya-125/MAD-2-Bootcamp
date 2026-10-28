@@ -1,13 +1,22 @@
-import { api, notify, badge } from "../../api.js";
+import { api, notify, badge, downloadFile } from "../../api.js";
 import ResultView from "../../components/ResultView.js";
 
 export default {
   components: { ResultView },
   data() {
-    return { bookings: [], openId: null };
+    return {
+      bookings: [],
+      openId: null,
+      exporting: false,
+      exportFile: null,
+      timer: null,
+    };
   },
   mounted() {
     this.load();
+  },
+  beforeUnmount() {
+    clearInterval(this.timer);
   },
   methods: {
     badge,
@@ -27,9 +36,41 @@ export default {
     toggle(id) {
       this.openId = this.openId === id ? null : id;
     },
+    async exportCsv() {
+      this.exporting = true;
+      this.exportFile = null;
+      const { task_id } = await api("/api/participant/export", "POST");
+      notify("Export Started - We will Alert You When it is Ready", "info");
+      this.timer = setInterval(async () => {
+        const status = await api(`/api/participant/export/${task_id}`);
+        if (status.state === "SUCCESS") {
+          clearInterval(this.timer);
+          this.exporting = false;
+          this.exportFile = status.filename;
+          notify("Your CSV is Ready (A Copy was Also Emailed to You)");
+        } else if (status.state === "FAILURE") {
+          clearInterval(this.timer);
+          this.exporting = false;
+          notify("Export Failed", "danger");
+        }
+      }, 2000);
+    },
+    download() {
+      downloadFile(
+        `/api/participant/export/download/${this.exportFile}`,
+        this.exportFile,
+      );
+    },
   },
   template: `
-    <h3 class="mb-3">My Bookings & History</h3>
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+      <h3 class="mb-0">My Bookings & History</h3>
+      <div>
+        <button v-if="exportFile" class="btn btn-success me-2" @click="download">Download CSV</button>
+        <button class="btn btn-outline-primary" :disabled="exporting" @click="exportCsv">
+          {{ exporting ? "Preparing Export..." : "Export History (CSV)" }}</button>
+      </div>
+    </div>
     <div class="card p-3 table-responsive">
       <table class="table">
         <thead><tr><th>Event</th><th>Project</th><th>Slot</th><th>Judge</th><th>Status</th><th></th></tr></thead>
@@ -51,7 +92,7 @@ export default {
               <td colspan="6" class="bg-light"><ResultView :result="b.result" /></td>
             </tr>
           </template>
-          <tr v-if="!bookings.length"><td colspan="6" class="text-muted">You have not Booked Anything yet.</td></tr>
+          <tr v-if="!bookings.length"><td colspan="6" class="text-muted">You Have Not Booked Anything Yet.</td></tr>
         </tbody>
       </table>
     </div>

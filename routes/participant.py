@@ -1,8 +1,9 @@
 from datetime import date
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, current_app, request, jsonify, send_from_directory
 from sqlalchemy import update
 from extensions import db
 from models import Event, Slot, Booking
+from tasks import export_history_csv
 from utils import error, role_required, current_user
 from cache_utils import clear_event_cache
 
@@ -104,3 +105,26 @@ def cancel_booking(booking_id):
     db.session.commit()
     clear_event_cache(slot.event_id)
     return jsonify({"message": "Booking Cancelled", "booking": booking_view(booking)})
+
+@participant_bp.post("/export")
+@role_required("participant")
+def start_export():
+    task = export_history_csv.delay(current_user().id)
+    return jsonify({"task_id": task.id, "message": "Export Started"}), 202
+ 
+@participant_bp.get("/export/<task_id>")
+@role_required("participant")
+def export_status(task_id):
+    result = export_history_csv.AsyncResult(task_id)
+    if result.state == "SUCCESS":
+        if not result.result.startswith(f"history_{current_user().id}_"):
+            return error("Not Your Export", 403)
+        return jsonify({"state": "SUCCESS", "filename": result.result})
+    return jsonify({"state": result.state})
+ 
+@participant_bp.get("/export/download/<filename>")
+@role_required("participant")
+def download_export(filename):
+    if not filename.startswith(f"history_{current_user().id}_"):
+        return error("Not Your Export", 403)
+    return send_from_directory(current_app.config["EXPORT_DIR"], filename, as_attachment=True)

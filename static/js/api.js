@@ -87,3 +87,16 @@ const BADGE = {
 export function badge(status) {
   return "badge bg-" + (BADGE[status] || "secondary");
 }
+
+export async function downloadFile(path, filename) {
+  const response = await fetch(path, {
+    headers: { Authorization: `Bearer ${auth.token}` },
+  });
+  if (!response.ok) throw new Error("Download Failed");
+  const blob = await response.blob();
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}

@@ -1,0 +1,31 @@
+<div style="font-family: Arial, sans-serif; max-width: 560px">
+  <h2 style="color: #198754">Results Are Out: {{ event.name }}</h2>
+  <p>
+    Hi {{ booking.participant.name }}, Here is How
+    <b>{{ booking.project_title }}</b> Did.
+  </p>
+  <table style="border-collapse: collapse; width: 100%">
+    {% for s in evaluation.scores %}
+    <tr>
+      <td style="border-bottom: 1px solid #eee; padding: 6px">
+        {{ s.criterion.name }}
+      </td>
+      <td
+        style="border-bottom: 1px solid #eee; padding: 6px; text-align: right"
+      >
+        {{ s.marks }} / {{ s.criterion.max_marks }}
+      </td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td style="padding: 6px"><b>Total</b></td>
+      <td style="padding: 6px; text-align: right">
+        <b>{{ evaluation.total_score }} / {{ event.max_score }}</b>
+      </td>
+    </tr>
+  </table>
+  {% if evaluation.remarks %}
+  <p><i>Judge's Feedback: "{{ evaluation.remarks }}"</i></p>
+  {% endif %}
+  <p style="color: #6c757d; font-size: 12px">- DemoDay Portal</p>
+</div>
