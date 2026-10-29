@@ -1,0 +1,73 @@
+<div style="font-family: Arial, sans-serif; max-width: 640px">
+  <h2 style="color: #212529; margin-bottom: 0">DemoDay Activity Report</h2>
+  <p style="color: #6c757d; margin-top: 4px">
+    {{ start.strftime("%d %b %Y") }} - {{ end.strftime("%d %b %Y") }}
+  </p>
+
+  <table style="width: 100%; border-collapse: separate; border-spacing: 8px">
+    <tr>
+      {% for label, value in [("Events Conducted", stats.events_conducted),
+      ("Students Evaluated", stats.students_evaluated), ("Completed Bookings",
+      stats.completed_bookings), ("Pending Evaluations",
+      stats.pending_evaluations)] %}
+      <td
+        style="
+          background: #f4f6fb;
+          padding: 12px;
+          text-align: center;
+          border-radius: 6px;
+        "
+      >
+        <div style="font-size: 24px; font-weight: bold">{{ value }}</div>
+        <div style="font-size: 12px; color: #6c757d">{{ label }}</div>
+      </td>
+      {% endfor %}
+    </tr>
+  </table>
+
+  <h3>Events</h3>
+  <table style="width: 100%; border-collapse: collapse">
+    <tr style="background: #212529; color: #fff">
+      <th style="padding: 6px; text-align: left">Event</th>
+      <th style="padding: 6px">Booked</th>
+      <th style="padding: 6px">Evaluated</th>
+      <th style="padding: 6px">Avg Score</th>
+    </tr>
+    {% for name, row in per_event.items() %}
+    <tr>
+      <td style="padding: 6px; border-bottom: 1px solid #eee">{{ name }}</td>
+      <td
+        style="padding: 6px; border-bottom: 1px solid #eee; text-align: center"
+      >
+        {{ row.booked }}
+      </td>
+      <td
+        style="padding: 6px; border-bottom: 1px solid #eee; text-align: center"
+      >
+        {{ row.evaluated }}
+      </td>
+      <td
+        style="padding: 6px; border-bottom: 1px solid #eee; text-align: center"
+      >
+        {{ row.avg }}
+      </td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="4" style="padding: 6px">No Demos in this Period.</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  <h3>Most Active Judges</h3>
+  <ol>
+    {% for name, count in top_judges %}
+    <li>{{ name }} - {{ count }} Evaluations</li>
+    {% else %}
+    <li>No Evaluations in this Period.</li>
+    {% endfor %}
+  </ol>
+  <p style="color: #6c757d; font-size: 12px">
+    Generated Automatically by DemoDay Portal (Celery Beat).
+  </p>
+</div>

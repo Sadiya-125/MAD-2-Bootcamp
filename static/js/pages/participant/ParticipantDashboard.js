@@ -27,7 +27,7 @@ export default {
         <div class="card p-3 mb-3">
           <h5>Upcoming Demos</h5>
           <div v-for="b in upcoming" :key="b.id" class="border-bottom py-2">
-            <b>{{ b.event_name }}</b> — {{ b.project_title }}
+            <b>{{ b.event_name }}</b> - {{ b.project_title }}
             <div class="small text-muted">{{ b.date }} · {{ b.start_time }}-{{ b.end_time }} · Judge: {{ b.judge_name }}</div>
             <a v-if="b.meeting_link" :href="b.meeting_link" target="_blank" class="small">Join link</a>
           </div>
@@ -36,7 +36,7 @@ export default {
         <div class="card p-3">
           <h5>Published results</h5>
           <div v-for="b in results" :key="b.id" class="border-bottom py-2">
-            <div class="mb-1"><b>{{ b.event_name }}</b> — {{ b.project_title }}</div>
+            <div class="mb-1"><b>{{ b.event_name }}</b> - {{ b.project_title }}</div>
             <ResultView :result="b.result" />
           </div>
           <p v-if="!results.length" class="text-muted mb-0">No Results Published Yet.</p>

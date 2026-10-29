@@ -34,7 +34,12 @@ const LINKS = {
 
 export default {
   data() {
-    return { auth };
+    return { auth, open: false };
+  },
+  watch: {
+    $route() {
+      this.open = false;
+    },
   },
   computed: {
     links() {
@@ -48,25 +53,24 @@ export default {
     },
   },
   template: `
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-      <div class="container">
+    <nav class="navbar">
+      <div class="container app-nav-inner">
         <router-link class="navbar-brand" to="/">DemoDay</router-link>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="nav">
-          <ul class="navbar-nav me-auto">
+        <button class="nav-toggle" type="button" aria-label="Toggle navigation"
+                :aria-expanded="String(open)" aria-controls="nav" @click="open = !open"></button>
+        <div class="nav-panel" :class="{ open }" id="nav">
+          <ul class="navbar-nav">
             <li class="nav-item" v-for="link in links" :key="link.to">
               <router-link class="nav-link" :to="link.to">{{ link.label }}</router-link>
             </li>
           </ul>
-          <div v-if="auth.user" class="d-flex align-items-center gap-2">
+          <div v-if="auth.user" class="user-box">
             <router-link to="/profile" class="text-light text-decoration-none small">
               {{ auth.user.name }} <span class="badge bg-secondary">{{ auth.user.role }}</span>
             </router-link>
             <button class="btn btn-outline-light btn-sm" @click="logout">Logout</button>
           </div>
-          <div v-else class="d-flex gap-2">
+          <div v-else class="user-box">
             <router-link to="/login" class="btn btn-outline-light btn-sm">Login</router-link>
             <router-link to="/register" class="btn btn-primary btn-sm">Register</router-link>
           </div>

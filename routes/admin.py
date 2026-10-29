@@ -1,10 +1,11 @@
+from datetime import date, timedelta
 from flask import Blueprint, request, jsonify
-from sqlalchemy import or_, update
+from sqlalchemy import func, or_, update
 from extensions import db
 from models import Criterion, Event, JudgeProfile, Track, User, Slot, Booking, Evaluation, EVENT_MODES, EVENT_STATUSES, EVENT_LEVELS, USER_STATUSES
 from utils import error, missing_fields, parse_date, role_required, valid_email
 from cache_utils import clear_event_cache
-from tasks import notify_results
+from tasks import daily_reminders, monthly_report, notify_results
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
 
@@ -20,6 +21,41 @@ def stats():
         "bookings": Booking.query.filter(Booking.status != "Cancelled").count(),
         "evaluations": Evaluation.query.count()
     })
+
+@admin_bp.get("/charts")
+@role_required("admin")
+def charts():
+    per_event = db.session.query(Event.name, func.count(Booking.id)).join(Booking, Booking.event_id == Event.id).filter(Booking.status != "Cancelled").group_by(Event.id).all()
+ 
+    judges = User.query.filter_by(role="judge").order_by(User.name).all()
+    slot_counts = dict(db.session.query(Slot.judge_id, func.count(Slot.id)).group_by(Slot.judge_id).all())
+    eval_counts = dict(db.session.query(Evaluation.judge_id, func.count(Evaluation.id))
+                       .group_by(Evaluation.judge_id).all())
+ 
+    start = date.today() - timedelta(days=13)
+    trend = {start + timedelta(days=i): 0 for i in range(14)}
+    for (booked_at,) in db.session.query(Booking.booked_at).filter(Booking.booked_at >= start):
+        if booked_at.date() in trend:
+            trend[booked_at.date()] += 1
+ 
+    return jsonify({
+        "bookings_per_event": {"labels": [r[0] for r in per_event], "values": [r[1] for r in per_event]},
+        "judge_workload": {"labels": [j.name for j in judges],
+                           "slots": [slot_counts.get(j.id, 0) for j in judges],
+                           "evaluations": [eval_counts.get(j.id, 0) for j in judges]},
+        "booking_trend": {"labels": [d.strftime("%d %b") for d in trend], "values": list(trend.values())},
+    })
+ 
+@admin_bp.post("/jobs/<name>")
+@role_required("admin")
+def run_job(name):
+    if name == "reminders":
+        task = daily_reminders.delay()
+    elif name == "monthly-report":
+        task = monthly_report.delay("current") 
+    else:
+        return error("Unknown Job", 404)
+    return jsonify({"message": f"Job Queued ({task.id[:8]}). Check MailHog in a Few Seconds."}), 202
 
 @admin_bp.get("/tracks") 
 # @admin_bp.route("/tracks", methods=["GET"])  # Alternative Way to Define Route
@@ -245,7 +281,7 @@ def fill_criterion(criterion, data, event):
 
     try:
         if "max_marks" in data:
-            criterion.max_marks = int(data["marks"])
+            criterion.max_marks = int(data["max_marks"])
         if "weightage" in data:
             criterion.weightage = float(data["weightage"])
     except (TypeError, ValueError):

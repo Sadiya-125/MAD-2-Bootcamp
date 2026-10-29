@@ -1,0 +1,41 @@
+<div style="font-family: Arial, sans-serif; max-width: 560px">
+  <h2 style="color: #0d6efd">
+    Your Demo is {{ "today" if slot.date == today else "tomorrow" }}!
+  </h2>
+  <p>Hi {{ booking.participant.name }},</p>
+  <table style="border-collapse: collapse">
+    <tr>
+      <td style="padding: 4px 12px 4px 0"><b>Event</b></td>
+      <td>{{ event.name }}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 12px 4px 0"><b>Project</b></td>
+      <td>{{ booking.project_title }}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 12px 4px 0"><b>Date &amp;Time</b></td>
+      <td>
+        {{ slot.date.strftime("%d %b %Y") }}, {{
+        slot.start_time.strftime("%H:%M") }} - {{
+        slot.end_time.strftime("%H:%M") }}
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 12px 4px 0"><b>Judge</b></td>
+      <td>{{ slot.judge.name }}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 12px 4px 0"><b>Where</b></td>
+      <td>
+        {% if slot.meeting_link %}<a href="{{ slot.meeting_link }}"
+          >{{ slot.meeting_link }}</a
+        >{% else %}{{ event.venue }}{% endif %}
+      </td>
+    </tr>
+  </table>
+  <p>
+    <b>Instructions:</b> {{ event.instructions or "Be on Time and Keep your Demo
+    Ready." }}
+  </p>
+  <p style="color: #6c757d; font-size: 12px">- DemoDay Portal</p>
+</div>

@@ -46,7 +46,7 @@ export default {
         <div class="col-lg-4">
           <div class="card p-3 mb-3">
             <h6>Instructions</h6>
-            <p class="small mb-0">{{ event.instructions || "—" }}</p>
+            <p class="small mb-0">{{ event.instructions || "-" }}</p>
           </div>
           <div class="card p-3">
             <h6>How you will be Judged</h6>

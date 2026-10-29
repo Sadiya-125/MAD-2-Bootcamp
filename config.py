@@ -3,6 +3,16 @@ import os
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
+# Load .env (python-dotenv isn't installed, so nothing else does)
+_env_file = os.path.join(BASE_DIR, ".env")
+if os.path.exists(_env_file):
+    with open(_env_file, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, value = line.split("=", 1)
+                os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', '56HiLZxY6Sl4NgBp8wT0FhiJ36vD1i1TWWzx-N3vEGM')
 
@@ -28,6 +38,8 @@ class Config:
     MAIL_SENDER = "Demoday <noreply@demoday.local>"
 
     EXPORT_DIR = os.path.join(BASE_DIR, "exports")
+
+    GCHAT_WEBHOOK_URL = os.environ.get("GCHAT_WEBHOOK_URL", "")
 
     ADMIN_NAME = "Super Admin"
     ADMIN_EMAIL = "admin@demoday.local"
